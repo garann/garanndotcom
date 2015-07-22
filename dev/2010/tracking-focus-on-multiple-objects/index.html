@@ -1,0 +1,29 @@
+<html><head><meta charset="utf-8"><title>totes profesh: tracking focus on multiple objects</title><link rel="stylesheet" href="../../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>tracking focus on multiple objects</h1><div class="meta">Fri, 09 Jul 2010 03:28:09 +0000</div><div class="content"><p>You remember that time period when website navigations of all types had to be in drop-downs? Remember when they'd be like two, three levels deep, pretty much your whole damned site map stretched out across the top or down the left of your page? I remember that. And during that time, I remember running into a problem that plagues me to this day. I was using Dead Edwards' <a href="http://dean.edwards.name/IE7/">IE7</a> to get <code>:hover</code> to work, I think, and still running into problems because IE was interpreting my mousing over a child element as equivalent to mousing out of its parent. I find it annoying that this is still an issue.</p>
+<p>I was trying to implement an autocomplete jQuery plugin at work today and was dismayed that I had apparently broken it by putting <code>overflow:auto</code> and a height on the faux dropdown of results. Clicking on the scrollbar (thus out of the input field) hid the results div. I was able to fix it using the code below, but then the damned thing would hide itself if I scrolled and then tried to click one of the results to select it:</p>
+<code>$input
+.focus(function(){
+		// track whether the field has focus, we shouldn't process any results if the field no longer has focus
+		hasFocus = true;
+	})
+	.blur(function() {
+		// track whether the field has focus
+		hasFocus = false;
+		if (!resultsHasFocus) {
+			hideResults();
+		}
+	});
+	$results
+	.mouseover(function(e) {
+		resultsHasFocus = true;
+	})
+	.mouseout(function(e) {
+		resultsHasFocus = false;
+		if (!hasFocus) {
+			hideResults();
+		}
+	});
+</code>
+<p>Fortunately, my neighbor in the cube village at work is <a href="http://craveytrain.com/blog/">Mr. Cravey</a>, and I was able to turn to him and ask him if he knew how to get IE to stop misinterpreting my mouse movements (he did - substitute <code>mouseenter</code> and <code>mouseleave</code> for <code>mouseover</code> and <code>mouseout</code>, something I cannot believe I lived this many years without knowing).  Strangely enough, he had the code right in front of him because he was working on a very similar problem.</p>
+<p>And so we had an interesting discussion about how you track explicit and implicit focus (i.e., clicking and hovering) across multiple different objects in order to determine when to toggle state. I kept the approach above, setting flags, because the elements I needed to track focus in didn't share a container. His did, and required only explicit focus, so I believe he ended up using <code>focusin</code> and <code>focusout</code>. We sort of agreed that, once this problem gets sufficiently complex, there's no solution for it that isn't kind of dirty. Setting flags seems like it shouldn't be necessary, but it's a very obvious way for separate elements to inform each other of their state so that one doesn't go toggling something the other isn't ready to have toggled yet. I was thinking about custom events, but honestly that feels like a more palatable version of the same concept, like the old cat food commercial where the cat food has been mashed up and adorned with a sprig of parsley.</p>
+<p>Kind of dancing around the real issue here, which is not actually the focusing, but the blurring. Assuming what you want to toggle is show and hide, you put a little close button on that shit and none of this is an issue anymore. The real problem is that any member of the set of tracked elements can opt in on behalf of all of them, but they all need to explicitly opt out.</p> 
+<p>I know what seems like the most comprehensive solution to me, but it's not very elegant.. It would be thorough, though, to put your series of objects in an array and attach handlers for both implicit and explicit focus and blur to the array itself. I could see that taking a long time, though, since you'd have to check whether anything in the array had focus every time something within the array lost or received it. Practically, the best thing to do is probably to use Cravey's method even in cases where it means adding an extra wrapper element. One extra tag is really not so bad when compared to any alternative I can think of.</p></div></body></html>

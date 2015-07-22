@@ -1,0 +1,33 @@
+<html><head><meta charset="utf-8"><title>totes profesh: CSS, live(), and application state</title><link rel="stylesheet" href="../../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>CSS, live(), and application state</h1><div class="meta">Wed, 16 Jun 2010 18:02:19 +0000</div><div class="content"><p>An idea I ended up thinking a lot about as a result of the application rewrite I just did was managing client-based application state with CSS classes. I've been making mental lists, trying to figure out how far you could take it and whether it would be useful. I was thinking there was probably some performance caveat or something, but then I read this post on <a href="http://www.position-absolute.com/articles/demystifying-jquery-live-and-why-its-generally-faster-than-bind/">the relative speed of live()</a> and now I'm thinking maybe it's something worth exploring more.</p>
+<p>Using (what used to be) my application as an example, I can see a few possible states..</p>
+<ul>
+<li>Edit mode for the object's owner</li>
+<li>Display mode for the object's owner (so, surfacing links to access the edit mode)</li>
+<li>Display mode for non-owners (no edit links)</li>
+<li>Live mode (same as above, but possibly with more data about what the object is doing in whatever context it's been published or released to)</li>
+<li>Error mode (tracking needed corrections)</li>
+<li>...?</li>
+</ul>
+<p>You couldn't use switching classes alone to manage those if there were roles certain information had to be hidden from - you'd have to take care of that on the server, obviously. And you'd have to check permissions on any type of update, but presumably you'd be doing that anyway.. For my application it would work fine, though. For certain pieces of the application, I implemented a pared-down version and it's pretty successful.</p>
+<p>What I actually tried was really simple. I just applied a CSS class to a container, causing pieces of the interface to be shown and hidden. Event handlers for those elements were attached with jQuery live(), so that as stuff gets added and removed, its event handlers are already (usually) set up and switching states merely reveals or hides the elements that trigger them.</p>
+<p>Examples of WTF changing the "state"/container class actually does..</p>
+<ul>
+<li>Show/hide edit buttons</li>
+<li>Change an element's event handler</li>
+<li>Enable form elements</li>
+<li>Change layout to reveal spaces where new elements can be added</li>
+<li>Hide error messages</li>
+<li>Disable iframes (I need them - don't judge)</li>
+<li>Determine whether areas that contain actions that aren't automatically surfaced react to hovers</li>
+<li>Reveal state-specific information</li>
+</ul>
+<p>Especially with regard to changing event handlers, I'm assuming jQuery live() was designed with this use case in mind? What I mean is like:</p>
+<code>
+$("div.editable a.editItem").live("click",function() {
+    showSomeEditor();
+});
+$("div.error a.editItem").live("click",function() {
+    alert("Nice try. Fix whatever you screwed up, then we'll talk.");
+});
+</code>
+<p>I think this is just handy as hell, but every time I try to google information about how other people might be doing the same thing, I come up with nothing. So in the absence of any best practices or warnings, I'm still playing around with it on my own. I think it's cool.</p></div></body></html>
