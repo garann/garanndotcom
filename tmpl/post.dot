@@ -2,7 +2,7 @@
 	<head>
 		<meta charset="utf-8">
 		<title>totes profesh: {{= it.title }}</title>
-		<link rel="stylesheet" href="../../garanndotcom.css" />
+		<link rel="stylesheet" href="../../../garanndotcom.css" />
 	</head>
 	<body>
 

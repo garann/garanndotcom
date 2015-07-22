@@ -1,0 +1,50 @@
+<html><head><meta charset="utf-8"><title>totes profesh: jTemplates: easy answers to dumb questions</title><link rel="stylesheet" href="../../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>jTemplates: easy answers to dumb questions</h1><div class="meta">Fri, 18 Dec 2009 20:21:19 +0000</div><div class="content">I've been trying to use <a href="http://jtemplates.tpython.com/">jTemplates</a> for a fairly complex interface that displays quite a bit of data. The documentation on their site is pretty minimal, so I've come up with a lot of what may be very dumb questions that I've been forced to answer myself, by trial and error (how tacky).
+
+I figured I would post these in hopes of saving someone else some wondering:
+
+<strong>1. Can you treat an array like an array once it's part of your template data?</strong>
+
+Yep. In my data, Columns is an array, and this code works great:
+
+<code>&lt;table class="{#if $T.Columns.length == 1}onecolumn{#/if}"&gt;
+							{#if $T.Columns[0].Label != null}
+								&lt;thead&gt;
+								...
+</code>
+
+<strong>2. Does whitespace matter?</strong>
+
+Apparently not - see above.
+
+<strong>3. How do you refer to a property of a parent object from a child template?</strong>
+
+I couldn't figure this out, so I worked around it by adding the property I needed to the root object I was passing into the child. I ended up doing this in a function because neither of the two delimiters jTemplates uses - {} and {#} - can be used for straight assignment as far as I could tell.
+
+<code>{#foreach $T.Columns as c_f}
+											{#include COLUMN_CELL root=addFieldType($T.c_f,$T.FieldType)}
+										{#/for}
+										...
+		function addFieldType(obj, ft) {
+			obj.FieldType = ft;
+			return obj;
+		}
+</code>
+
+<strong>4. Can I put a property of the current object into my call to a child template?</strong>
+
+Seems like no. What I really wanted to do instead of the code above was this, which does not work:
+
+<code>{#foreach $T.Columns as c_f}
+											{#include COLUMN_CELL[$T.FieldType] root=$T.c_f}
+										{#/for}
+										...
+		{#template COLUMN_CELL[0]}
+										&lt;td&gt;&lt;input type="radio" disabled="disabled"/&gt;&lt;/td&gt;
+		{#/template COLUMN_CELL[0]}
+		{#template COLUMN_CELL[1]}
+										&lt;td&gt;&lt;input type="checkbox" disabled="disabled"/&gt;&lt;/td&gt;
+		{#/template COLUMN_CELL[1]}
+</code>
+
+
+For now, all I have is those four items.. I'm sure I'll come up with more as I get into the hard parts.</div></body></html>
