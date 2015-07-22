@@ -1,0 +1,68 @@
+<html><head><meta charset="utf-8"><title>totes profesh: perfect templates</title><link rel="stylesheet" href="../../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>perfect templates</h1><div class="meta">Thu, 19 Aug 2010 00:30:36 +0000</div><div class="content"><p>Last night at <a href="http://www.austinjavascript.com/">Austin JS</a> they tried out a new format where there was only a single talk and then the rest of the time was devoted to an "open forum". We were handed index cards, and people wrote down questions for the group to discuss. People other than me, at least. I missed that part of the instructions and handed in a card that just said <b>templates!!</b>. It turned out that most of the developers present weren't using templates, but those who were talked about what they'd worked with and gave some brief opinions. That generated a short but interesting back and forth about whether client-side templates serve any value if you can't use the same thing on the server-side.</p> 
+<p>Probably thanks to last night's discussion, today I was moved to finally finish reading the <a href="http://forum.jquery.com/topic/jquery-templates-proposal">thread on the jQuery templates proposal</a>, which gets really interesting toward the end. I read the last comment, stared at my screen for a minute or so, and then grabbed my notebook and wrote down what my idea of a perfect client-side templating tool would look like. It looks like this:</p>
+<pre>
+&lt;script type="text/html" id="tmplUser">
+&lt;h1>${firstName} ${lastName}&lt;/h1>
+${?premium}
+	&lt;img src="premium.gif"/>
+${?/}
+${#reviewsCount = myNamespace.getReviews(userID).length}
+${?reviewsCount > 0}
+	${reviewsCount} $ {pluralize("Review",reviewsCount)}
+${?/}
+${>order=>orders}
+	${order.number}
+	${order.name}
+	${?premium}
+		&lt;a href="premiumReturn.html">Return free&lt;/a>
+	${?}
+		&lt;a href="return.html">Return (you pay shipping)&lt;/a>
+	${?/}
+${>/}
+${#pluralize=function(word,count) {
+	if (count==1)
+		return word;
+	else {
+		var lastChar = word.charAt(word.length-1);
+		return (lastChar=='s' || lastChar=='x' ? word + "es" : word + "s");
+	}
+}}
+&lt;/script>
+...
+var data = {
+	firstName:"Garann",
+	lastName:"Means",
+	premium:true,
+	userID:9999000,
+	orders:{
+		[number:321,name:"Mule Variations"],
+		[number:543,name:"Library Nation"]
+	}
+};
+someElement.innerHTML = perfectTemplate("templateFile.js",data);
+</pre>
+
+<p>Ok wow, that example looks quite a bit longer typed out than just written on a piece of paper. So I'll try and keep my explanations of the criteria as pithy as I can.<p>
+<b>syntax</b>
+<p>I don't actually have a preference between <code>${}</code> and any other delimiter. I'll get to why in a second. But I do like having different delimiters for write: <code>${}</code>; if: <code>${?}</code>; nested template: <code>${>}</code>; and declaration: <code>${#}</code>. I think an additional one this example neglects is the plain old for loop: <code>${@}</code>. And I like being able to exit the closest structure by repeating the prefix and just using the slash. Why make the template more complicated by having so many different types of delimiters? Because it allows them to do different things without - for instance - <a href="http://www.garann.com/dev/2010/whats-bigger-than-a-tweet-but-smaller-than-a-blog-post/">choking on parentheses</a> by giving them explicit direction on what to do with their contents.</p>
+<b>external files</b>
+<p>In the jQuery templates thread there's a lot of talk about what the best delimiters are based on what other languages are using. If your template can be loaded from an external file, who the fuck cares what other languages are using? If you're having ASP.NET parse your Javascript files, you've got problems a templating system is not going to fix (hint: try putting your server-rendered constants in their own file and, if you must parse something, parse that). Also, being able to load templates from an external file means you don't add extra weight to your page for things that may not be used. This would be in addition to, not as a substitute for, loading templates from DOM elements already on the page.</p>
+<b>can reference outside objects</b>
+<p>I think this is crucial and most templates allow it because they allow Javascript. However, there are some whose syntax <i>seems to</i> imply that they don't. So, for the record, I'd like to be able to access my own namespaced variables and functions in addition to frequently referenced things like <code>length</code>.</p>
+<b>declarations (?)</b>
+<p>Honestly I am not completely sold on this either. Just declaring variables and not functions or objects might be a middle ground worth considering, though.</p>
+<p>Why it seems like a good idea: 
+1) It keeps you from having to repeat the same chain of objects or functions to get a property that's used repeatedly. 
+2) It would be nice to declare functions specific to your template that manipulate pure data for presentation.</p>
+<p>Why it seems like a bad idea: at that point you almost might as well just write a big string concatenation function and give up on templates. That is, there's no limit to the amount of programmatic logic embedded in the template, which is probably not desirable.</p>
+<b>nested templates</b>
+<p><a href="http://jtemplates.tpython.com/">jTemplates</a> uses named templates that aren't nested, and I found that pretty useful in terms of being able to separate different structures for readability. However, there was one caveat that really pissed me off, which was that I couldn't easily refer to an object's parent from within a template called on a property of that parent. I think it's less readable but more useful for sub-templates to remain nested within their context, and thus remain aware of their parent. You could still do this with named templates, but I think that would be <i>really</i> confusing.</p> 
+<p>This point is as much about <code>this</code> as it is about nesting. jTemplates didn't work for me because it changed the definition of <code>this</code> in each template. I would prefer to see <code>this</code> always be the object passed in to the template when called, and e.g. an element in an array to be given its own named variable for easy reference while in the context of a child template.</p>
+<b>easy use</b>
+<p>For flexibility, I think a template should take the template and a data object and spit out a string. The developer should have full control over how and where that string gets added to the DOM.</p>
+<b>no viewmodel</b>
+<p>My personal, possibly crazy, opinion is that viewmodels are worthless. Creating a specific object for every scenario where you need to apply data to your View means you get a lot of repeated data spread across many many different viewmodels. You could argue that getting raw data and running the same property through a global function for each is no better, but I see one big difference. I've never worked with a viewmodel where I didn't have to apply some transformation for the sake of the View to some property. You can fucking quote me. Experience has taught me to assume there will always be something and that committing yourself to adding a property to the viewmodel every time Something comes up is a Sisyphean task. Therefore I believe strongly in getting the username from the same function each time it's used. If you use it more than once in the same context then, yeah, put it in a variable, but a variable local to that context, not one that's forever stuck to the viewmodel. Data should be pure and flexible.</p>
+<b>programmatic logic in the template</b>
+<p>Look, there are some very pretty templating syntaxes out there, but the prettiest seem to offer the least control over how the data gets applied. As far as I'm concerned, a template is just string concatenation in context, and that's what it should be - it needn't try to approximate markup. It's a helper that allows you to keep your objects cleaner and to reuse code more easily. Insisting that it should be readable is silly. If you want readable, make it a server-side include and hydrate it property by property. A template allows you to abstract out logic that is specific to the display of the markup <i>that template</i> produces, and therefore should be as logically complex as it needs to be to accomplish its task.</p>
+<b>part two?</b>
+<p>The point of this very lengthy exercise? Defining exactly what I should be looking for. Hopefully, having done that, I can now start exploring the templating systems I don't currently have any exposure to and evaluating them for my own use. The plan is that this will be continued and I'll run down the options that exist and - with luck - discover one that's a perfect fit. But if you know the answer and want to save me the research, please, have at it:</p></div></body></html>

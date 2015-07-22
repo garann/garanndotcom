@@ -1,0 +1,18 @@
+<html><head><meta charset="utf-8"><title>totes profesh: blah blah blah CSS variables</title><link rel="stylesheet" href="../../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>blah blah blah CSS variables</h1><div class="meta">Wed, 08 Oct 2008 19:20:26 +0000</div><div class="content"><p>Admittedly, it's possible I'm missing something, but the talk about <a href="http://disruptive-innovations.com/zoo/cssvariables/">CSS variables</a>/<a href="http://icant.co.uk/articles/cssconstants/">constants</a> online sort of confuses me. I can see the utility they'd offer, but I kind of side with <a href="http://www.w3.org/People/Bos/CSS-variables">Bert Bos</a> on a lot of his points about the trade-offs involved.</p>
+
+<p>I've totally been there, trying to find the salmon color used in the header links on version 0.42 of a site that's grown to encompass ten different stylesheets, unable to accurately pick the color from the image in the third-hand PDF, wishing it just had a simple name defined in the base stylesheet. However, at some point trying to remember the variable name is going to be only slightly easier than remembering the hex color. Moreover, you save no code. You're just substituting one string for another, you're redefining whatever you're going to redefine, the fundamental processes we struggle with now become no simpler.</p>
+
+<p>I'd like to see some sort of CSS micro-style instead of variables. I think this would answer a few of the points I've heard raised against variables, and would also save code and be more useful. I'm talking about extending the concept of inheritance so that we can invoke it programmatically instead of having to rely on an element's position within the document. (Maybe something like this already exists. Maybe I'm an idiot. This is always possible, especially since this seems to me like the obvious thing to do.)</p>
+
+<p>What I'm talking about is something like so:</p>
+
+<pre style="overflow:scroll;">
+// here's the variable
+$specialNote { font-size: 12px; color: #333; padding: 5px; background-color: #eee; border: 1px solid #ccc; }
+// here's its basic implementation
+($specialNote) #mainContent p.specialNote { font-size: inherit; }
+// here it's used somewhere completely unrelated, and we add only what differs
+($specialNote) #rightSide dl.specialList dd span.specialNote { display: inline-block; }
+</pre>
+
+<p>I think that would be really cool.</p></div></body></html>
