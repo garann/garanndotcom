@@ -1,0 +1,24 @@
+<html><head><meta charset="utf-8"><title>totes profesh: jQuery templates (plus a pony)</title><link rel="stylesheet" href="../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>jQuery templates (plus a pony)</h1><div class="meta">Thu, 22 Jul 2010 00:56:24 +0000</div><div class="content"><p>The <a href="http://wiki.github.com/nje/jquery/jquery-templates-proposal">jQuery templates proposal</a> makes me really excited. I love jTemplates and all, but support seems sparse. And I know other cool alternatives - for jQuery and for other libraries, as well as homegrown solutions - exist. But jQuery is what I use at work and so I'm happy templates are being considered for addition. I'm hopeful that this will result in a rock solid implementation and some really cool extensions.</p>
+<p>I already switched the jTemplates stuff in my work project over to the latest branch of <a href="http://github.com/nje/jquery-tmpl">jquery-tmpl</a>, and thought I'd add it to the front page of this site, too. It's sort of a weird application, because the front page data is static and doesn't really need templates. As a matter of fact, the one thing it did need, jquery-tmpl (someone please correct me if I'm calling it the wrong thing) doesn't include. However, with a minor modification, I was able to get it to do what I needed, <i>and</i> have the currently static markup already parsed as a template so that in the future I can easily make it more dynamic.</p>
+<p>The changes I wanted to make involved loading each frame of the animation/paper doll thing on the front page on demand, instead of having them all there in the page when it loads. This is part one in a two-part attempt to make it not run like total shit on mobile. I moved all the extra frames off into their own pages, and could easily at that point have just gotten them one by one with $.get(). But, as mentioned, I wanted to load them as templates for flexibility down the line (ex: translations, because many people in many nations are interested in my hobbies and my dog and cat). So I did this:
+
+<code>
+	$.extend({
+		tmplFromUrl: function( url, data, callback, options, parentItem ) {
+			$.get(url,function(response) {
+				var tmpl = $.tmpl(response, data, options, parentItem);
+				callback(tmpl);
+			});
+		}
+	});
+</code>
+
+Called like this:
+<code>
+			$.tmplFromUrl(url, null, function(tmpl) {
+				nextPage = tmpl.appendTo(container);
+				garanndotcom.flipPages(currentPage,nextPage);
+			});
+</code>
+
+<p>Even though that's totally boneheaded for this particular application, the ability to load data from an external file is something I'm really hoping they add. I never used it in my big jTemplates application (cause every page was one big template), but it was something I was hoping to use on my current work project. I don't <i>mind</i> using my own goofy plugins to get the same effect, but I doubt I'll be the only person to ever want this and it seems silly to have a bunch of different people writing a bunch of different code that's probably going to amount to less than ten lines apiece. Maybe there's a good reason they don't want to add it (security seems like it might be one) - I haven't made it to the bottom of the <a href="http://forum.jquery.com/topic/jquery-templates-proposal">discussion thread</a> about templates yet. Personally, I'm hopeful that they just haven't gotten around to it yet.</p></div></body></html>

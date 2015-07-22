@@ -1,0 +1,22 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>totes profesh</title>
+		<link rel="stylesheet" href="../garanndotcom.css" />
+	</head>
+	<body class="contents">
+
+		<div class="header">
+			<h2>garann means &gt; totes profesh</h2>
+			a defunct web development blog
+		</div>
+
+	{{~ it.years :year }}
+		<h1>{{= year.text }}</h1>
+		{{~ year.links :link }}
+		<a href="{{= link.href }}">{{= link.text }}</a><br/>
+		{{~}}
+	{{~}}
+
+	</body>
+</html>

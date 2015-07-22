@@ -1,0 +1,63 @@
+<html><head><meta charset="utf-8"><title>totes profesh: pull the thread, it all falls apart</title><link rel="stylesheet" href="../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>pull the thread, it all falls apart</h1><div class="meta">Thu, 13 Nov 2008 19:03:00 +0000</div><div class="content"><p>Oh what I would not give for a Thread object in Javascript. I have a tidy little dynamic Javascript loader that's working in all browsers, IE6 and up, with the exception of Safari 3 (and, presumably, its predecessors). The problem is that none of my attempts to pause the execution of the function that needs the dynamically added scripts seems to work. While other browsers wait for an interval I've set to clear, Safari merrily continues to execute while my interval is repeating, whether this happens in the same function or elsewhere.</p>
+
+<p><strike>Here's what would have been the loader, which I will now attempt to bury and forget:</strike></p>
+
+<p>UPDATE: Now works nicely in all browsers IE6 and up. I love having this blog. It's like a magic box I drop my code into that makes it suddenly work. I don't know the mechanations behind that, but I'm a fan.</p>
+
+<pre style="overflow:scroll;height:400px;">
+var myLoadedScripts = [];
+function loadScript(path,requiringScript,callback) {
+	var requiring = null;
+	if (myLoadedScripts.length &lt; 1) {
+		myLoadedScripts = document.getElementsByTagName("script");
+	}
+	for (var i=0; i  -1) requiring = tag;
+		if (tag.src &amp;&amp; tag.src === path) {
+			return;
+		}
+	}
+	var newScript = document.createElement("script");
+	newScript.type = "text/javascript";
+	newScript.src = path;
+
+	if (newScript.onreadystatechange) {
+		newScript.onreadystatechange = function() {
+			if (this.readyState === "loaded") {
+				callback();
+			}
+		}
+	} else {
+		newScript.onload = callback;
+	}
+
+	if (requiring === null) {
+		document.getElementsByTagName("head")[0].appendChild(newScript);
+	} else {
+		// insert before the script requiring this
+		document.body.insertBefore(newScript,requiring);
+	}
+
+}
+
+var myLoadedCSS = [];
+function loadCSS(path) {
+	if (myLoadedCSS.length &lt; 1) {
+		myLoadedCSS = $('link[rel=stylesheet]');
+	}
+	for (var i=0; i &lt; myLoadedCSS.length; i++) {
+		var tag = myLoadedCSS[i];
+		if (tag.href === path) return;
+	}
+	var newScript = document.createElement("link");
+	newScript.rel = "stylesheet";
+	newScript.type = "text/css";
+	newScript.href = path;
+
+	if (myLoadedCSS.length &lt; 2) {
+		document.getElementsByTagName("head")[0].appendChild(newScript);
+	} else {
+		// insert above other CSS to prevent overrides
+		document.body.insertBefore(newScript,myLoadedCSS[0]);
+	}
+}
+</pre></div></body></html>

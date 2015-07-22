@@ -1,0 +1,16 @@
+<html><head><meta charset="utf-8"><title>totes profesh: two steps back</title><link rel="stylesheet" href="../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>two steps back</h1><div class="meta">Tue, 16 Jun 2009 20:01:24 +0000</div><div class="content">I'm in a bad place. I have over 8,000 lines of Javascript here that control a cool AJAX-heavy application. These 8,000-some-odd lines don't perform so hot. In IE6, some silent memory leak causes the application to get slower and slower until it stops performing altogether. Worse, my code only constitutes about 600 of those lines, so I'm not completely confident in my plans to refactor it.
+
+After going all through it and reading <a href="http://developer.yahoo.com/performance/">everyone's</a> <a href="http://dev.opera.com/articles/view/efficient-javascript/">lists</a> of <a href="http://www.stubbornella.org/content/2009/03/27/reflows-repaints-css-performance-making-your-javascript-slow/">tips</a> on increasing performance, there still weren't a lot of apparent problem areas. The main issues I saw were:
+
+<ul>
+	<li>8,000+ lines of code</li>
+	<li>People keep opening the site in IE6</li>
+</ul>
+
+Neither of those are things I can really correct. Especially the latter, for reasons I can't discuss lest my head explode.
+
+One reason there's so much code in this application is that numerous DOM elements are added and wired up dynamically. Modern browsers seem to handle this well, so I don't want to imply it's excessive, but it is the thing I can control that'll offer the biggest performance boost if I change it. In most cases, these elements are added dynamically so the code doesn't have to go looking for them later to toggle their CSS classes or attach event listeners. Because of a custom templating system that provides the meat of the frontend, adding unique IDs to have a handy reference to these elements isn't an option.
+
+What I'm considering right now is what can be moved inline. This is hard to consider because of the voices in my head screaming that we don't put things inline anymore, not CSS and especially not calls to Javascript functions. The truth is, though, that if I moved a lot of the event code into functions accessible from outside the objects that call it right now, moved properties that are being saved on Javascript objects into unglamorous innerHTML, and simply set the styles of elements inline rather than using YUI methods, I'd probably save a bunch of code.
+
+Since I started using Javascript libraries I've been imagining a coming utopia where we'd never worry about cross-browser compatibility and our frontends would be as complex as we wanted. Now I'm wondering where the tipping point is. It's uncomfortable to think we may have to throttle back usage of the wide variety of impressive tools the past few years have provided because what we're doing with them is more than the average machine can handle.</div></body></html>

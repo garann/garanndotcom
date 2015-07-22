@@ -1,0 +1,142 @@
+<html><head><meta charset="utf-8"><title>totes profesh: calling the github API with node.js</title><link rel="stylesheet" href="../../garanndotcom.css" /></head><body><div class="header"><h2><a href="../index.html">garann means &gt; totes profesh</a></h2>a defunct web development blog</div><h1>calling the github API with node.js</h1><div class="meta">Sun, 04 Sep 2011 21:34:12 +0000</div><div class="content"><b>Updated: when I originally posted this, I wasn't able to connect to the github v3 API. That's fixed now, and several pieces of code are different as a result. Namely:
+<ul><li>removed http.createClient() - that's deprecated, oops</li><li>require the https module</li><li>save the oauth token in the session</li><li>completely change the way the API gets called</li></ul>
+Sorries.</b>
+<p>For the past several days I've been working on getting a list of github repos for an authenticated user using node. Seems like a pretty simple problem, right? For someone more seasoned in the various technologies involved, it no doubt is. But in my particular case.. well, refer back to the "several days" part. As an outsider when it comes to node.js, I find it damned challenging every time I try to create a node app to do even the simplest things, and there's a lot of research involved, and frequently I find myself with seventeen tabs open cause I'm combining info from a bunch of different sources to get the thing I want. In service to anyone else who might be experiencing the same thing, I thought I'd write down how I got this all working.</p>
+<b>1. install all the things</b>
+<p>For completeness' sake, let's start at the very beginning. You need node and npm. I like to get the <a href="https://sites.google.com/site/nodejsmacosx/">precompiled version with npm</a>, cause if I wanted to compile shit I'd still be a Java dev. In addition, we need to grab some npm modules. You could list these out in <a href="http://wiki.commonjs.org/wiki/Packages/1.0">packages.json</a>, but since I'm still testing out and occasionally discarding various modules, I just grab all of mine one-by-one. Go with what you feel. The modules needed for this example are:</p>
+<ul><li>express</li><li>everyauth</li><li>hiredis*</li><li>connect-redis*</li><li>jqtpl**</li></ul>
+<p style="font-size:smaller;">* The redis stuff isn't used in this example, but it's where the session info is theoretically getting stored, and if you use my code as-is, it'll probably break without it.<br/>** Assuming you know how to write the template syntax and pass in whatever data you need, substitute any template engine you like.</p>
+<p>If you haven't used npm (did I say completeness? I meant <em>completeness</em>, baby!), it's very easy, and quite frequently works without a hitch. Open up your terminal and navigate to the directory where your site will be stored. On the command line, for each module you want installed, type:</p>
+<code>npm install [name of module]</code>
+<p>If your npm version is up-to-date and you typed everything correctly, you should find that you have a folder called <code>node_modules</code> and it contains a sub-directory for each module you just installed.</p>
+<b>2. set up express structure and import modules</b>
+<p>I know a lot of JavaScript devs who came to JS through jQuery. In the same way, I came to node through Express. If you're used to using a JS library, it can be an unpleasant shock if you have a reason to write out an XHR without one's help to remember how much damned code is actually involved in that. The way a library abstracts away the repetition and fallbacks inherent in an XHR, Express abstracts out some of the extra code needed to provide basic handling of requests to your server.</p>
+<p>In the root of our directory, let's add a file called <code>app.js</code>. This is what we'll actually run when it's time to fire up the server. At the top of the file, we want to import all those modules we just installed:</p>
+<pre style="width: 400px; overflow: auto;">
+var express = require('express'),
+	app = express.createServer(),
+	http = require('http'),
+	https = require('https'),
+	connect = require('connect'),
+	redis = require('connect-redis')(express),
+	everyauth = require('everyauth'),
+	sesh = new redis();
+</pre>
+<p>Now we have access to all the objects we'll need to put our app together. You'll notice we got a couple modules for free as part of node or Express. You may also notice that some modules we refer to statically, while others need an instance created. If you didn't notice, well, now you know.</p> 
+<b>3. create a config file</b>
+<p>Because we're connecting to an API and storing session information, we're going to need a bunch of keys and stuff. The usual structure of an Express app has us put supporting JS files in a <code>lib</code> directory, so let's make one of those in the root of our app and create a new file called <code>config.js</code>. We'll dump all our super secret passwords and stuff in there, and that way if we want to put this up on github later we won't have to go through our main code looking for sensitive information. To have something to put in the file, we'll need to go over to github and <a href="https://github.com/account/applications/new">register our app</a>.</p>
+<p style="font-size:smaller;">If you have a hosting account with Joyent, Heroku, Linode, Nodejitsu, or one of the other node hosting providers, or if you've set up node on a VPS, you'll have a public URL you can supply to github as the callback. If not, you'll need to make a fake URL for localhost. My callback URL is <code>http://local.host:8001</code>. To make that work, I also had to map <code>127.0.0.1</code> to <code>local.host</code> in my <a href="http://decoding.wordpress.com/2009/04/06/how-to-edit-the-hosts-file-in-mac-os-x-leopard/">hosts file</a> (note that that link has you using nano to edit it - I like to navigate to the directory and type <code>edit hosts</code> to make it open in my default text editor, which has a GUI, like nature intended) by adding the line <code>127.0.0.1 local.host</code>.</p>
+<p>After registering with github, we should have a client ID and a key. We'll add that, and a couple other things, to our config file:</p>
+<pre style="width: 400px; overflow: auto;">
+var config = {};
+
+config.gh_clientId = "[client ID from github]";
+config.gh_secret = "[secret from github]";
+config.redis_secret = "[anything you want]";
+
+module.exports = config;
+</pre>
+<p>That's all pretty pulled-apart, but it's just JS, so if you want to restructure it so it's just one line, be my guest. If you haven't worked with modules, you may want to note that <code>exports</code> thing at the end. That defines what our module will return, which is important, since we - in all cases, as far as I know - treat any external files in node as modules.</p>
+<p>Now that our config's all set, we can add another line to the variable declarations at the top of <code>app.js</code> to import it: <code>config = require('./lib/config')</code>. (Note that it doesn't care about the file extension.)</p>
+<b>4. set up basic express app</b>
+<p>Now let's add more Express stuff to <code>app.js</code>. This'll give us some basic routing, rendering, and storing of our sessions.</p>
+<pre style="width: 400px; overflow: auto;">
+app.configure(function(){
+    app.set('view engine', 'html');
+    app.set('view options', {layout: false}); // we can use a master layout, but I turned mine off
+    app.register('.html', require('jqtpl').express); // oh hey, remember this guy? importing him inline to mix things up
+    app.use(express.bodyParser());
+    app.use(express.cookieParser());
+    app.use(express.session({store: sesh, secret: config.redis_secret}));
+    app.use(everyauth.middleware()); // pretend you didn't see this yet
+});
+ 
+app.get('/',function(req,res) {
+	res.render('login');
+});
+
+app.get('/board',function(req,res) {
+	res.render('board');
+});
+
+app.listen(process.env.PORT || 8001); // use whatever number makes you happy
+</pre>
+<p>You'll find this sort of basic stuff in pretty much any Express app you look at. We're configuring our app to use our template engine and look for the file extension our templates will be using, set up some stuff to support sessions, and add in everyauth, which we'll look at in a second. We're also creating a few routes for our app, and for right now all those do is render the templates without data. Finally, we tell the app which port to listen on.</p>
+<p>Since the two templates we want to render - <code>login.html</code> and <code>board.html</code> - don't exist yet, it's probably a good time to create them. By default, Express will look for these in the directory <code>views</code>. Here's what the bodies of mine look like:</p>
+<pre style="width: 400px; overflow: auto;">
+<!-- login.html -->
+&lt;a href="/auth/github">sign in with github&lt;/a>
+</pre>
+<pre style="width: 400px; overflow: auto;">
+<!-- board.html -->
+hey there, {{= username}}!
+&lt;br/>&lt;br/>
+your repos: 
+{{each repos}}
+&lt;p>
+	&lt;a href="{{= $value.url}}">{{= $value.name}}&lt;/a>&lt;br/>
+	{{= $value.description}}
+&lt;/p>
+{{/each}}
+</pre>
+<p>You can create those in the views directory and be done with them, or change them up a bit to suit your own plans for displaying github data. All mine do is provide a login link, using a route that everyauth will create for us, thanks to that <code>everyauth.middleware()</code> line in our app configuration, and then display some data we don't currently have. So hey! Let's work on that.</p>
+<b>5. configure everyauth</b>
+<p>everyauth provides a fairly automated way of authenticating our user with github (and a bunch of other sites - check <a href="https://github.com/bnoguchi/everyauth">their github</a> for a full rundown). All we really need to do to make the module work is give it our app's credentials from github, add the authenticated user to the session, and provide a path to redirect to once everything's done. I'm adding another piece which overrides the default logout behavior from everyauth's middleware to remove the user ID from the session. I'm pretty sure you could add this block of code almost anywhere, but I have mine between my block of variable declarations at the top and my app configuration:</p>
+<pre style="width: 400px; overflow: auto;">
+everyauth.github
+  .appId(config.gh_clientId)
+  .appSecret(config.gh_secret)
+  .findOrCreateUser( function (session, accessToken, accessTokenExtra, githubUserMetadata) {
+    session.oauth = accessToken;
+    return session.uid = githubUserMetadata.login;
+  })
+  .redirectPath('/');
+ everyauth.everymodule.handleLogout( function (req, res) {
+  req.logout(); 
+  req.session.uid = null;
+  res.writeHead(303, { 'Location': this.logoutRedirectPath() });
+  res.end();
+});
+</pre>
+<p>If you do check the documentation out on github, you'll see that the code above is almost entirely lifted from their examples. All we're really doing differently is adding (and removing) the property <code>uid</code> to our session.</p> 
+<b>6. add logic to the routes</b>
+<p>If you tested your app right now (from the root directory of your site, in Terminal, just type <code>node app.js</code>, then open a browser and go to <code>http://local.host:8001</code>), you ought to see your login page with a link to authorize your app via github. After you do that, you'll get redirected back to.. your login page. Which obviously sucks. So now let's flesh out our routes, starting with the root of the site:</p>
+<pre style="width: 400px; overflow: auto;">
+app.get('/',function(req,res) {
+	if (req.session && req.session.uid) {
+	    return res.redirect('/board');
+	}
+	res.render('login');
+});
+</pre>
+<p>This is super simple. Our rendering of the login page is still there, but now we're going to check for the presence of that <code>uid</code> property in our session. If it's there, we redirect to our <code>/board</code> route. If you check out your app now, assuming you've already authenticated, it should send you to <code>board.html</code>. Which doesn't do anything at all without some data, so let's beef that up now.</p>
+<p>It's worth noting that there are node modules that handle connecting to github's API for you - <a href="http://github.com/fitzgen/github-api">github-api</a> and <a href="http://github.com/ajaxorg/node-github">node-github</a>. I didn't use them because 1) connecting to the API is actually pretty easy once you figure out how it's done, and 2) they both use <a href="http://develop.github.com/">version 2 of the github API</a>, which is now on <a href="http://developer.github.com/v3/">version 3</a>. For my app, I need version 3, so what we're going to do is call the API manually, which means using node's built-in <code>https</code> module:</p>
+<pre style="width: 400px; overflow: auto;">
+app.get('/board',function(req,res) {
+    if (!req.session.uid) {
+        return res.redirect('/');
+    }
+    var repos,
+        opts = {
+			host: "api.github.com",
+			path: '/user/repos?access_token=' + req.session.oauth,
+			method: "GET"
+		},
+    	request = https.request(opts, function(resp) {
+    		var data = "";
+    		resp.setEncoding('utf8');
+		resp.on('data', function (chunk) {
+			data += chunk;
+		});
+		resp.on('end', function () {
+			repos = JSON.parse(data); 
+			res.render('board',{username: req.session.uid, repos: repos});
+		});
+    	});
+    request.end();
+});
+</pre>
+<p>That may look a little messy (probably there is a nicer way to write it), but it's not doing anything too tricky. The first if statement checks if the user's authenticated and, if not, sends them back to the login page. After that, we create our empty <code>repos</code> var and an object literal containing the properties of the request we want to make - the hostname, path, and method. Then we create/fire our request using <code>https.request()</code>, passing it the settings we defined and providing a callback. Finally, we end the request.</p>
+<p>Every time we get a response from github, we'll add the data to an existing buffer. When we're done getting responses, we'll parse the data we've received and render our template, passing in the username and our array of repositories. If you test out your page again, you should see your github login and a list of your repos. You can use this same technique to get and display any of the data publicly available through the API and things private to your authenticated user.</p>
+<b>ps:</b>
+<p>I'm working this stuff out as I go (obvs), so I'd love your feedback, especially if what's above doesn't work for you, or you're trying to connect to a different API and this example doesn't map very well to that. Also, I'm going to be talking about working with node as a front-end developer at the next <a href="http://events.jquery.org/2011/boston/">jQuery conference in Boston</a>, so if you're also a front-end dev just starting to play with this stuff, I'd be really interested to hear about your experiences and any barriers you might have encountered.</p></div></body></html>
