@@ -195,4 +195,7 @@ a:hover, a:active {
 	#sum {
 		display: none;
 	}
+	.hireme {
+		font-size: .7em;
+	}
 }
