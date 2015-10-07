@@ -190,3 +190,9 @@ a:hover, a:active {
 .footer-page footer a {
 	display: block;
 }
+
+@media screen and (orientation: portrait) {
+	#sum {
+		display: none;
+	}
+}
