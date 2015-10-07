@@ -183,6 +183,7 @@ a:hover, a:active {
 	display: block;
 }
 .footer-page footer {
+	position: relative;
 	display: flex;
 	flex-direction: row;
 	justify-content: space-around;
