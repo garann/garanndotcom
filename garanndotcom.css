@@ -107,6 +107,11 @@ a:hover, a:active {
 	max-width: 100%;
 }
 .hireme {
+	max-width: 900px;
+	margin: 2em auto;
+}
+/*
+.hireme {
 	display: flex;
 	width: 100%;
 	max-height: 100vh;
@@ -129,7 +134,7 @@ a:hover, a:active {
 /*	background-image: url(itme.png);
 	background-size: contain;
 	background-repeat: no-repeat;
-	background-position: center; */
+	background-position: center; */ /*
 	background: linear-gradient(to bottom, rgba(192,52,247,1) 0%, rgba(63,93,242,1) 25%, rgba(85,245,250,1) 50%, rgba(71,247,13,1) 75%, rgba(224,230,39,1) 100%);
 	position: relative;
 	display: flex;
@@ -152,6 +157,7 @@ a:hover, a:active {
 	position: absolute;
 	top: 0px;
 }
+*/
 .hireme p {
 	margin: .2em 0;
 }
@@ -160,24 +166,31 @@ a:hover, a:active {
 	font-size: 2em;
 	margin-top: 1em;
 	word-spacing: .25em;
+	cursor: pointer;
+}
+.hireme p.collapsed + p {
+	display: none;
 }
 .hireme aside {
 	display: none;
 	position: fixed;
-	top: 5em;
+	top: 25%;
 	right: 300px;
 	width: 15em;
 	font-size: 1em;
-	background-color: #fff;
-	border: 2px #474747 solid;
+	background-color: #3f5df2;
 	border-radius: 5px;
 	padding: 1em;
 	z-index: 2;
-
+	color: #fff;
+	box-shadow: 0 .5em 1em rgba(50,50,50,.5);
 }
 .hireme aside h3 {
 	font-size: 1.3em;
 	margin: .2em 0;
+}
+.hireme aside a {
+	color: #eeff00;
 }
 .hireme aside:target {
 	display: block;
@@ -189,6 +202,7 @@ a:hover, a:active {
 	justify-content: space-around;
 	padding: 1em;
 	background-color: #cf0;
+	box-shadow: 0 -.5em 1em rgba(50,50,50,.2);
 }
 .footer-page footer a {
 	display: block;
