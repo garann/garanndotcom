@@ -166,7 +166,12 @@ a:hover, a:active {
 	font-size: 2em;
 	margin-top: 1em;
 	word-spacing: .25em;
+}
+.hireme p.collapsed {
 	cursor: pointer;
+}
+.hireme p.collapsed:hover {
+	color: #c034f7;
 }
 .hireme p.collapsed + p {
 	display: none;
