@@ -45,6 +45,10 @@ body {
 }
 .hello {
 	padding-top: 5em;
+	display: flex;
+	height: 100vh;
+	flex-direction: column;
+	align-content: stretch;
 }
 .contents {
 	padding-bottom: 10em;
@@ -109,6 +113,7 @@ a:hover, a:active {
 .hireme {
 	max-width: 900px;
 	margin: 2em auto;
+	flex: 1 100%;
 }
 /*
 .hireme {
